@@ -21,7 +21,10 @@
     "autoload": {
         "exclude-from-classmap": [
             "**/Database/Migrations/**"
-        ]
+        ],
+        "psr-4": {
+            "Models\\": "Models/"
+        }
     },
     "autoload-dev": {
         "psr-4": {
