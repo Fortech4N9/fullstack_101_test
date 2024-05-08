@@ -3,10 +3,12 @@
 namespace App\Controllers;
 
 use App\Models\CommentModel;
+use CodeIgniter\HTTP\ResponseInterface;
 use ReflectionException;
 
 class Home extends BaseController
 {
+	private const EMAIL_PATTERN = '/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/';
     public function index(): string
     {
         return view('comments');
@@ -15,13 +17,11 @@ class Home extends BaseController
     public function fetch(): string
     {
         $model = new CommentModel();
-        $model->orderBy('created_at', 'DESC');
-
-        $page = $this->request->getVar('page') ?? 1;
+	    $page = $this->request->getVar('page') ?? 1;
         $model->paginate(3);
         $pager = $model->pager;
         $comments = $model->paginate(3, 'group1', $page);
-
+		
         $data = [
             'comments' => $comments,
             'pager' => $pager,
@@ -33,7 +33,7 @@ class Home extends BaseController
     /**
      * @throws ReflectionException
      */
-    public function create()
+    public function create(): ResponseInterface
     {
         $model = new CommentModel();
         $data = [
@@ -41,11 +41,20 @@ class Home extends BaseController
             'comment_text' => $this->request->getPost('comment_text'),
             'created_at' => date("Y-m-d H:i:s")
         ];
+		if (!$this->validateEmail($data['user_email'])) {
+			return $this->response->setJSON([
+				'error' => 'Invalid Email',
+			]);
+		}
         $model->insert($data);
         return $this->response->setJSON($data);
     }
 
-    public function delete($id)
+	private function validateEmail(string $email): bool
+	{
+		return preg_match(self::EMAIL_PATTERN, $email);
+	}
+    public function delete($id): ResponseInterface
     {
         $model = new CommentModel();
         $model->delete($id);
